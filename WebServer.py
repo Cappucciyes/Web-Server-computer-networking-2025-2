@@ -1,6 +1,8 @@
 import socket
 import threading
 import logging
+import time
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -8,13 +10,25 @@ def parse_http_request(data):
     lines = data.split("\r\n")
     request_line = lines[0]
     method, path, version = request_line.split()
-    return method, path
+    headers = {}
+
+    for line in lines[1:]:
+        if line == '':
+            break
+        headerData = list(map(lambda x: x.strip(), line.split(':'))) 
+        headers[headerData[0]] = ''.join(headerData[1:]) 
+
+    return method, path, headers
 
 def route(path):
     if path == '/':
         return "<h1>Welcome to My Web Server</h1>"
     elif path == '/about':
         return "<h1>About This Server</h1>"
+    elif path == "/board":
+        return getFileAsString("./static/board.html")
+    elif path =="/board.js":
+        return getFileAsString("./static/board.js")
     else:
         return "<h1>404 Not Found</h1>"
 
@@ -35,11 +49,73 @@ def handle_client(client_socket, client_address):
         client_socket.close()
         return
 
-    method, path = parse_http_request(data)
-    body = route(path)
-    response = build_response(body)
-    client_socket.sendall(response.encode())
-    client_socket.close()
+    method, path, headers = parse_http_request(data)
+
+    if path == "/boardEvent":
+        handleBoard(client_socket)
+    elif path == "/board":
+        body = route(path)
+        response = build_response(body, content_type="text/html; charset=utf-8")
+
+        client_socket.sendall(response.encode())
+        client_socket.close() 
+    elif path == "/board.js":
+        body = route(path)
+        response = build_response(body, content_type="text/javascript; charset=utf-8")
+        client_socket.sendall(response.encode())
+        client_socket.close() 
+    else:
+        body = route(path)
+        response = build_response(body)
+        
+        client_socket.sendall(response.encode())
+        client_socket.close()
+
+def getFileAsString(pathToFile):
+    result = ''
+    try:
+        with open(pathToFile, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        result += html_content
+    except FileNotFoundError:
+        print(f"Error: The file '{pathToFile}' was not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    return result
+
+def handleBoard(client_socket):
+    header =  (
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/event-stream\r\n"
+        "Cache-Control: no-cache\r\n" 
+        "Connection: keep-alive\r\n"
+        "\r\n"
+    )
+
+    client_socket.sendall(header.encode())
+
+    currentStatus = 0
+    while True:
+        body = {
+            "id" : "1234",
+            "status" : currentStatus
+        }
+
+        frame = (
+            f"event: haha\n"
+            f"data: {json.dumps(body)}\n\n"
+        )
+        print(frame)
+
+        try:
+            client_socket.sendall(frame.encode())
+        except:
+            print("no client found")
+            break
+
+        time.sleep(1)
+        currentStatus += 1
 
 def main():
     HOST = "0.0.0.0"

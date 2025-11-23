@@ -76,29 +76,16 @@ def receive_messages(client_socket):
 
 		sys.exit(0)
 
-	
-
 def main():
-
 	"""클라이언트 메인 함수"""
-
 	# 소켓 생성
-
 	client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-	
-
 	try:
-
 		# 서버에 연결
-
 		logger.info(f"서버 {HOST}:{PORT}에 연결 시도 중...")
-
 		client_socket.connect((HOST, PORT))
-
 		logger.info("서버에 연결되었습니다.")
-
-		
 
 		# Ctrl+C 처리
 
