@@ -4,6 +4,7 @@ import logging
 import time
 import json
 import boardHandler 
+from utils import getFileAsString
 
 logging.basicConfig(level=logging.INFO)
 
@@ -71,19 +72,6 @@ def handle_client(client_socket, client_address):
         
         client_socket.sendall(response.encode())
         client_socket.close()
-
-def getFileAsString(pathToFile):
-    result = ''
-    try:
-        with open(pathToFile, 'r', encoding='utf-8') as file:
-            html_content = file.read()
-        result += html_content
-    except FileNotFoundError:
-        print(f"Error: The file '{pathToFile}' was not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    return result
 
 def main():
     HOST = "0.0.0.0"
