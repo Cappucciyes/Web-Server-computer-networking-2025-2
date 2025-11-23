@@ -3,6 +3,7 @@ import threading
 import logging
 import time
 import json
+import boardHandler 
 
 logging.basicConfig(level=logging.INFO)
 
@@ -52,7 +53,7 @@ def handle_client(client_socket, client_address):
     method, path, headers = parse_http_request(data)
 
     if path == "/boardEvent":
-        handleBoard(client_socket)
+        boardHandler.handleBoard(client_socket)
     elif path == "/board":
         body = route(path)
         response = build_response(body, content_type="text/html; charset=utf-8")
@@ -83,39 +84,6 @@ def getFileAsString(pathToFile):
         print(f"An error occurred: {e}")
 
     return result
-
-def handleBoard(client_socket):
-    header =  (
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/event-stream\r\n"
-        "Cache-Control: no-cache\r\n" 
-        "Connection: keep-alive\r\n"
-        "\r\n"
-    )
-
-    client_socket.sendall(header.encode())
-
-    currentStatus = 0
-    while True:
-        body = {
-            "id" : "1234",
-            "status" : currentStatus
-        }
-
-        frame = (
-            f"event: haha\n"
-            f"data: {json.dumps(body)}\n\n"
-        )
-        print(frame)
-
-        try:
-            client_socket.sendall(frame.encode())
-        except:
-            print("no client found")
-            break
-
-        time.sleep(1)
-        currentStatus += 1
 
 def main():
     HOST = "0.0.0.0"
